@@ -73,30 +73,12 @@ extension User: TokenAuthenticatable {
 struct AdminUser: Migration {
     typealias Database = PostgreSQLDatabase
     
-    static func generatePassword(passwordLength: Int) -> String {
-        
-        let passwordMaterial : NSString = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-        let passwordMaterialLength = UInt32(passwordMaterial.length)
-        
-        var returnValue = ""
-        
-        for _ in 0 ..< passwordLength {
-            let randomPosition = arc4random_uniform(passwordMaterialLength)
-            var character = passwordMaterial.character(at: Int(randomPosition))
-            returnValue += NSString(characters: &character, length: 1) as String
-        }
-        
-        return returnValue
-    }
-    
     static func prepare(on connection: PostgreSQLConnection) -> Future<Void> {
-        let randomString = generatePassword(passwordLength: 10)
         let password = try? BCrypt.hash("password")
         guard let hashedPassword = password else {
             fatalError("Failed to create admin user")
         }
         let user = User(name: "Admin", username: "admin", password: hashedPassword)
-        print("Admin password is: \(randomString)")
         return user.save(on: connection).transform(to: ())
     }
     static func revert(on connection: PostgreSQLConnection) -> Future<Void> {
